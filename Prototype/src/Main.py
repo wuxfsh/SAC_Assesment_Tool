@@ -1,55 +1,58 @@
-import sys
-from PyQt5.QtWidgets import *
+import json
+import webbrowser
+import pandas as pd
 
-data = {"info": "成绩单",
-        "grades": {
-            "Chinese": {
-                "小明": 60,
-                "小红": 80
-            },
-            "Math": {
-                "小明": 90,
-                "小红": 70
-            },
-            "English": {
-                "小明": 80,
-                "小红": 80
-            },
-        }}
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget,\
+    QLabel, QSpacerItem, QSizePolicy, QHBoxLayout
+from collections import OrderedDict
+import chardet
 
+data = {
+    "number": "",
+    "date": "01.10.2016",
+    "name": "R 3932",
+    "locations": [
+        {
+            "depTimeDiffMin": "0",
+            "name": "Spital am Pyhrn Bahnhof",
+            "arrTime": "",
+            "depTime": "06:32",
+            "platform": "2",
+            "stationIdx": "0",
+            "arrTimeDiffMin": "",
+            "track": "R 3932"
+        },
+        {
+            "depTimeDiffMin": "0",
+            "name": "Windischgarsten Bahnhof",
+            "arrTime": "06:37",
+            "depTime": "06:40",
+            "platform": "2",
+            "stationIdx": "1",
+            "arrTimeDiffMin": "1",
+            "track": ""
+        },
+        {
+            "depTimeDiffMin": "",
+            "name": "Linz/Donau Hbf",
+            "arrTime": "08:24",
+            "depTime": "",
+            "platform": "1A-B",
+            "stationIdx": "22",
+            "arrTimeDiffMin": "1",
+            "track": ""
+        }
+    ]
+}
 
-class TreeWidget(QTreeWidget):
-    def __init__(self):
-        super(TreeWidget, self).__init__()
+df = pd.json_normalize(data, 'locations', ['date', 'number', 'name'],
+                    record_prefix='locations_')
+print (df)
 
-        self.setColumnCount(2)  # 共2列
-        self.setHeaderLabels(['Key', 'Value'])
+with open('./data/BI_Repository.json', 'r') as load_f:
+    load_dict = json.load(load_f)
 
-        self.rootList = []
-        root = self
-        self.generateTreeWidget(data, root)
-
-        print(len(self.rootList), self.rootList)
-
-        self.insertTopLevelItems(0, self.rootList)
-
-    def generateTreeWidget(self, data, root):
-        if isinstance(data, dict):
-            for key in data.keys():
-                child = QTreeWidgetItem()
-                child.setText(0, key)
-                if isinstance(root, QTreeWidget) == False:  # 非根节点，添加子节点
-                    root.addChild(child)
-                self.rootList.append(child)
-                print(key)
-                value = data[key]
-                self.generateTreeWidget(value, child)
-        else:
-            root.setText(1, str(data))
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    win = TreeWidget()
-    win.show()
-    sys.exit(app.exec_())
+    entries = load_dict['entries']
+    #print(entries)
