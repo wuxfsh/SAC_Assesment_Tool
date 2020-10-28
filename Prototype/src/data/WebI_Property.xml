@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WEBI_DOC_PROPS>
+   <WEBI_PROP NAME="VERSION" VALUE="1.0" />
+   <WEBI_PROP NAME="is_refresh_on_open" VALUE="false" />
+   <WEBI_DP DPNAME="Query 1" DPID="DP0" DSNAME="2CZXSHCBOOKINGAQ" DSID="DS0" />
+   <WEBI_PROMPT QUESTION="Depart Airport" PID="Depart Airport" LOCALE="en_US" OPTIONAL="no" PERSISTENT="yes" INDEXAWARE="yes" ORDER="-1" RESPONSE="unique" ORIGIN="user" TYPE="text">
+      <DPID>DP0</DPID>
+   </WEBI_PROMPT>
+   <WEBI_PROMPT QUESTION="Arrival Airport" PID="Arrival Airport" LOCALE="en_US" OPTIONAL="no" PERSISTENT="yes" INDEXAWARE="yes" ORDER="-1" RESPONSE="unique" ORIGIN="user" TYPE="text">
+      <DPID>DP0</DPID>
+   </WEBI_PROMPT>
+</WEBI_DOC_PROPS>
