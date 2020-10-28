@@ -1,81 +1,137 @@
+import json
+import webbrowser
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QStyledItemDelegate,\
-    QStyle
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget, \
+    QLabel, QSpacerItem, QSizePolicy, QHBoxLayout
+import chardet
 
 
-__Author__ = 'Irony'
-__Copyright__ = 'Copyright (c) 2019'
-__Version__ = 1.0
+class ItemWidget(QWidget):
+    """自定义的item"""
+
+    def __init__(self, text, badge, *args, **kwargs):
+        super(ItemWidget, self).__init__(*args, **kwargs)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel(text, self, styleSheet='color: white;'))
+        layout.addSpacerItem(QSpacerItem(
+            60, 1, QSizePolicy.Maximum, QSizePolicy.Minimum))
+        if badge and len(badge) == 2:  # 后面带颜色的标签
+            layout.addWidget(QLabel(
+                badge[0], self, alignment=Qt.AlignCenter,
+                styleSheet="""min-width: 80px; 
+                    max-width: 80px; 
+                    min-height: 38px; 
+                    max-height: 38px;
+                    color: white; 
+                    border:none; 
+                    border-radius: 4px; 
+                    background: %s""" % badge[1]
+            ))
 
 
-class NoColorItemDelegate(QStyledItemDelegate):
-
-    def paint(self, painter, option, index):
-        if option.state & QStyle.State_HasFocus:
-            # 取消虚线框
-            option.state = option.state & ~ QStyle.State_HasFocus
-        if option.state & QStyle.State_MouseOver and index.data(Qt.UserRole + 1):
-            # 不显示鼠标悬停颜色
-            option.state = option.state & ~ QStyle.State_MouseOver
-        super(NoColorItemDelegate, self).paint(painter, option, index)
-
-
-class Window(QTreeWidget):
+class JsonTreeWidget(QTreeWidget):
 
     def __init__(self, *args, **kwargs):
-        super(Window, self).__init__(*args, **kwargs)
-        self.setItemDelegateForColumn(0, NoColorItemDelegate(self))
-
-        # 父节点（不可选中）
-        pitem1 = QTreeWidgetItem(self, ['parent item 1'])
-        # 设置不可选中
-        pitem1.setFlags(pitem1.flags() & ~Qt.ItemIsSelectable)
-        # 设置一个标识用于屏蔽鼠标事件
-        pitem1.setData(0, Qt.UserRole + 1, True)
-
-        pitem2 = QTreeWidgetItem(self, ['parent item 2'])
-        pitem2.setFlags(pitem2.flags() & ~Qt.ItemIsSelectable)
-        pitem2.setData(0, Qt.UserRole + 1, True)
-
-        # 子节点（可选）
-        citem1 = QTreeWidgetItem(pitem1, ['child item 1'])
-        citem2 = QTreeWidgetItem(pitem2, ['child item 2'])
-
-        self.expandAll()
-
-        # 信号槽
-        self.itemActivated.connect(self.onItemActivated)
+        super(JsonTreeWidget, self).__init__(*args, **kwargs)
+        self.setEditTriggers(self.NoEditTriggers)
+        self.header().setVisible(False)
+        # 帮点单击事件
         self.itemClicked.connect(self.onItemClicked)
-        self.itemDoubleClicked.connect(self.onItemDoubleClicked)
-        self.itemPressed.connect(self.onItemPressed)
 
-    def mousePressEvent(self, event):
-        # 鼠标点击事件,判断当前点击位置是否有item且满足标志则拦截鼠标事件
-        item = self.itemAt(event.pos())
-        if item and item.data(0, Qt.UserRole + 1):
-            event.accept()
-            return
-        super(Window, self).mousePressEvent(event)
+    def onItemClicked(self, item):
+        """item单击事件"""
+        if item.url:  # 调用浏览器打开网址
+            webbrowser.open_new_tab(item.url)
 
-    def onItemActivated(self, item, column):
-        print('Activated', item.text(0), item, column)
+    def parseData(self, datas, parent=None):
+        """解析json数据"""
+        for data in datas:
+            url = data.get('url', '')
+            items = data.get('items', [])
+            # 生成item
+            _item = QTreeWidgetItem(parent)
+            _item.setIcon(0, QIcon(data.get('icon', '')))
+            _widget = ItemWidget(
+                data.get('name', ''),
+                data.get('badge', []),
+                self
+            )
+            _item.url = url  # 可以直接设置变量值
+            self.setItemWidget(_item, 0, _widget)
+            if url:
+                continue  # 跳过
+            # 解析儿子
+            if items:
+                self.parseData(items, _item)
 
-    def onItemClicked(self, item, column):
-        print('Clicked', item.text(0), item, column)
-
-    def onItemDoubleClicked(self, item, column):
-        print('DoubleClicked', item.text(0), item, column)
-
-    def onItemPressed(self, item, column):
-        print('Pressed', item.text(0), item, column)
+    def loadData(self, path):
+        """加载json数据"""
+        datas = open(path, 'rb').read()
+        datas = datas.decode(chardet.detect(datas).get('encoding', 'utf-8'))
+        self.parseData(json.loads(datas), self)
 
 
 if __name__ == '__main__':
     import sys
-    import cgitb
-    cgitb.enable(1, None, 5, '')
     from PyQt5.QtWidgets import QApplication
+
     app = QApplication(sys.argv)
-    w = Window()
+    app.setStyleSheet("""
+    QTreeView {
+    outline: 0px;
+    background: rgb(47, 64, 78);
+    }
+    QTreeView::item {
+        min-height: 92px;
+    }
+    QTreeView::item:hover {
+        background: rgb(41, 56, 71);
+    }
+    QTreeView::item:selected {
+        background: rgb(41, 56, 71);
+    }
+    
+    QTreeView::item:selected:active{
+        background: rgb(41, 56, 71);
+    }
+    QTreeView::item:selected:!active{
+        background: rgb(41, 56, 71);
+    }
+    
+    QTreeView::branch:open:has-children {
+        background: rgb(41, 56, 71);
+    }
+    
+    QTreeView::branch:has-siblings:!adjoins-item {
+        background: green;
+    }
+    QTreeView::branch:closed:has-children:has-siblings {
+        background: rgb(47, 64, 78);
+    }
+    
+    QTreeView::branch:has-children:!has-siblings:closed {
+        background: rgb(47, 64, 78);
+    }
+    
+    QTreeView::branch:open:has-children:has-siblings {
+        background: rgb(41, 56, 71);
+    }
+    
+    QTreeView::branch:open:has-children:!has-siblings {
+        background: rgb(41, 56, 71);
+    }
+    QTreeView:branch:hover {
+        background: rgb(41, 56, 71);
+    }
+    QTreeView:branch:selected {
+        background: rgb(41, 56, 71);
+    }
+    """)
+    w = JsonTreeWidget()
     w.show()
+    w.loadData('Sample_JSON_File.js')
+    """w.loadData('./JSON_File/data.json')"""
     sys.exit(app.exec_())
