@@ -1,3 +1,7 @@
+"""
+This is the prototype Python GUI for SAC Assessment Tool
+
+"""
 import json
 import webbrowser
 import pandas as pd
@@ -12,8 +16,6 @@ from PyQt5.QtCore import QAbstractTableModel, Qt
 from collections import OrderedDict
 import chardet
 import xml.etree.ElementTree as ET
-import xmltodict
-
 
 class pandasModel(QAbstractTableModel):
 
